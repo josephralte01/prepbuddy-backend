@@ -1,0 +1,40 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*.local
+*.local
+
+# Build outputs
+dist/
+build/
+coverage/
+tmp/
+temp/
+
+# Logs
+logs
+*.log
+
+# OS-generated
+.DS_Store
+Thumbs.db
+
+# Supabase-specific (if used)
+.supabase/
+*.supabase/
+supabase/.temp/
+supabase/migrations/*_shadow.sql
+supabase/config.toml
+
+# VS Code settings
+.vscode/
+
+# Others
+*.sqlite
+*.sqlite-journal
