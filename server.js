@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -13,22 +12,22 @@ const app = express();
 
 // CORS for frontend integration
 app.use(cors({
-  origin: 'http://localhost:3000', // ⬅️ change this to your frontend domain in production
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
   credentials: true
 }));
 
 app.use(express.json());
 app.use(cookieParser());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/prepbuddy', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('MongoDB connected');
-}).catch((err) => {
-  console.error('MongoDB connection error:', err);
-});
+// ✅ Correct MongoDB connection block
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('✅ MongoDB connected');
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -36,5 +35,11 @@ app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+// Handle unexpected promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('🔥 Unhandled Rejection shutting down...\n', err);
+  process.exit(1);
 });

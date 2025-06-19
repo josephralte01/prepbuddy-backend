@@ -38,3 +38,4 @@ supabase/config.toml
 # Others
 *.sqlite
 *.sqlite-journal
+echo ".env" >> .gitignore
