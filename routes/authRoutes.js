@@ -1,15 +1,19 @@
+// === routes/authRoutes.js ===
 const express = require('express');
 const router = express.Router();
-const { register, login, getCurrentUser } = require('../controllers/authController');
-const auth = require('../middleware/auth');
-const validate = require('../middleware/validate');
-const { registerSchema, loginSchema } = require('../validations/authValidation');
+const {
+  loginUser,
+  logoutUser,
+  getMe,
+  registerUser,
+  verifyEmail
+} = require('../controllers/authController');
+const isAuthenticated = require('../middleware/isAuthenticated');
 
-// Public routes with validation
-router.post('/register', validate(registerSchema), register);
-router.post('/login', validate(loginSchema), login);
-
-// Protected route
-router.get('/me', auth, getCurrentUser);
+router.post('/register', registerUser);
+router.get('/verify-email/:token', verifyEmail);
+router.post('/login', loginUser);
+router.post('/logout', logoutUser);
+router.get('/me', isAuthenticated, getMe);
 
 module.exports = router;
