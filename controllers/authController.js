@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const sendVerificationEmail = require('../utils/emailService');
+const sendResetEmail = require('../utils/emailService');
 
 exports.registerUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -46,6 +47,62 @@ exports.verifyEmail = async (req, res) => {
     await user.save();
 
     res.status(200).json({ message: 'Email verified successfully. You may now log in.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpiry = Date.now() + 3600000; // 1 hour
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetExpiry;
+    await user.save();
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    await sendResetEmail(email, user.name, resetUrl, true);
+
+    res.status(200).json({ message: 'Password reset link sent to your email.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.validateResetToken = async (req, res) => {
+  const { token } = req.params;
+  try {
+    const user = await User.findOne({ resetToken: token, resetTokenExpiry: { $gt: Date.now() } });
+    if (!user) return res.status(400).json({ error: 'Invalid or expired reset token' });
+
+    res.status(200).json({ message: 'Valid token' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: 'Password is required' });
+
+  try {
+    const user = await User.findOne({ resetToken: token, resetTokenExpiry: { $gt: Date.now() } });
+    if (!user) return res.status(400).json({ error: 'Invalid or expired token' });
+
+    user.password = password;
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful. You can now log in.' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
