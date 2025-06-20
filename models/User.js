@@ -1,4 +1,3 @@
-// === models/User.js ===
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -10,6 +9,11 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
+    unique: true
+  },
+  username: {
+    type: String,
+    required: [true, 'Username is required'],
     unique: true
   },
   password: {
@@ -33,7 +37,30 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+
+  // ✅ Gamification Fields
+  xp: {
+    type: Number,
+    default: 0,
+  },
+  streak: {
+    type: Number,
+    default: 0,
+  },
+  lastActiveDate: {
+    type: Date,
+  },
+  rank: {
+    type: Number,
+  },
+
+  // ✅ Social Features
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
+  // ✅ XP Badge System
+  badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
 });
 
 userSchema.pre('save', async function (next) {

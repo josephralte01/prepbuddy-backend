@@ -1,14 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
-const {
-  getMyNotifications,
-  markAsRead,
-  createGlobalNotification
-} = require('../controllers/notificationController');
+const { getMyNotifications, markAsRead } = require('../controllers/notificationController');
+const { protect } = require('../middleware/authMiddleware');
 
-router.get('/', auth, getMyNotifications);
-router.patch('/:id/read', auth, markAsRead);
-router.post('/broadcast', auth, createGlobalNotification); // Admin only
+router.get('/me', protect, getMyNotifications);
+router.patch('/:id/read', protect, markAsRead);
 
 module.exports = router;

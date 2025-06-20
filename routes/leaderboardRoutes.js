@@ -1,9 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const auth = require('../middleware/auth');
-const { getGlobalLeaderboard } = require('../controllers/leaderboardController');
+const { getLeaderboard } = require("../controllers/leaderboardController");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// Public or Authenticated (optional)
-router.get('/', auth, getGlobalLeaderboard);
+router.get("/", authMiddleware, getLeaderboard);
 
 module.exports = router;

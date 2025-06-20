@@ -1,4 +1,3 @@
-// === controllers/authController.js ===
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
@@ -18,11 +17,20 @@ exports.registerUser = async (req, res) => {
       return res.status(409).json({ error: 'Email already exists' });
     }
 
+    // Auto-generate unique username
+    let base = name.toLowerCase().replace(/\s+/g, '');
+    let username = base;
+    let count = 1;
+    while (await User.findOne({ username })) {
+      username = `${base}${count++}`;
+    }
+
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const newUser = await User.create({
       name,
       email,
       password,
+      username,
       verificationToken
     });
 
@@ -141,6 +149,7 @@ exports.loginUser = async (req, res) => {
       user: {
         name: user.name,
         email: user.email,
+        username: user.username,
         role: user.role
       }
     });
@@ -171,4 +180,26 @@ exports.logoutUser = (req, res) => {
     sameSite: 'None'
   });
   res.json({ message: 'Logged out' });
+};
+
+exports.resendVerificationEmail = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.isVerified)
+      return res.status(400).json({ error: 'Email already verified' });
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    user.verificationToken = verificationToken;
+    await user.save();
+
+    const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+    await sendVerificationEmail(user.email, user.name, verifyUrl);
+
+    res.status(200).json({ message: 'Verification email resent successfully' });
+  } catch (err) {
+    console.error('Resend verification failed:', err);
+    res.status(500).json({ error: 'Failed to resend verification email' });
+  }
 };

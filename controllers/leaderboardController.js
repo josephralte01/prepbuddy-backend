@@ -1,37 +1,48 @@
-const User = require('../models/User');
-const UserProgress = require('../models/UserProgress');
+const User = require("../models/User");
 
-exports.getGlobalLeaderboard = async (req, res) => {
+const getLeaderboard = async (req, res) => {
   try {
-    const topUsers = await UserProgress.aggregate([
-      { $unwind: "$mockTestResults" },
-      {
-        $group: {
-          _id: "$user",
-          totalScore: { $sum: "$mockTestResults.score" },
-          avgAccuracy: { $avg: "$mockTestResults.accuracy" }
-        }
-      },
-      {
-        $sort: { totalScore: -1, avgAccuracy: -1 }
-      },
-      { $limit: 20 }
-    ]);
+    const timeframe = req.query.timeframe || "all";
+    let users;
 
-    const enriched = await Promise.all(topUsers.map(async (entry) => {
-      const user = await User.findById(entry._id).select("name email subscriptionTier");
-      return {
-        userId: entry._id,
-        name: user.name,
-        email: user.email,
-        subscriptionTier: user.subscriptionTier,
-        totalScore: entry.totalScore,
-        avgAccuracy: entry.avgAccuracy
-      };
+    if (timeframe === "week") {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      users = await User.find({ lastActiveDate: { $gte: sevenDaysAgo } })
+        .select("name username xp badges followers following")
+        .lean();
+    } else if (timeframe === "month") {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      users = await User.find({ lastActiveDate: { $gte: thirtyDaysAgo } })
+        .select("name username xp badges followers following")
+        .lean();
+    } else {
+      users = await User.find()
+        .select("name username xp badges followers following")
+        .lean();
+    }
+
+    users.sort((a, b) => b.xp - a.xp);
+    users = users.map((user, index) => ({
+      ...user,
+      rank: index + 1,
     }));
 
-    res.status(200).json({ leaderboard: enriched });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const currentUser = await User.findById(req.user._id).select("following").lean();
+
+    res.json(users.map(user => ({
+      _id: user._id,
+      name: user.name,
+      username: user.username,
+      xp: user.xp,
+      badges: user.badges,
+      rank: user.rank,
+      isFollowing: currentUser.following.includes(user._id),
+      followsYou: user.followers.includes(req.user._id),
+    })));
+  } catch (err) {
+    console.error("Leaderboard error:", err);
+    res.status(500).json({ message: "Error loading leaderboard" });
   }
 };
+
+module.exports = { getLeaderboard };

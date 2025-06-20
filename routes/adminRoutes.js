@@ -1,8 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { getAdminStats } = require('../controllers/adminController');
+const { isAdmin } = require('../middleware/role');
+const {
+  getAdminStats,
+  manualXPControl
+} = require('../controllers/adminController');
 
-router.get('/stats', auth, getAdminStats); // Auth + admin check in controller
+// Protected Admin Routes
+router.get('/stats', auth, getAdminStats); // Admin dashboard stats
+router.post('/xp-control', auth, isAdmin, manualXPControl); // Manual XP Control by Admin
 
 module.exports = router;
