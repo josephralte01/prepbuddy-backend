@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const authMiddleware = require('../middleware/authMiddleware.js');
 const {
   getPlans,
   createOrder,
@@ -12,8 +12,8 @@ const {
 router.get('/plans', getPlans);
 
 // Authenticated: Create order, verify, get status
-router.post('/create', auth, createOrder);
-router.post('/verify', auth, verifyPayment);
-router.get('/status', auth, getMySubscription);
+router.post('/create', authMiddleware, createOrder);
+router.post('/verify', authMiddleware, verifyPayment);
+router.get('/status', authMiddleware, getMySubscription);
 
 module.exports = router;

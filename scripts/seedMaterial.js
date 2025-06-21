@@ -1,33 +1,58 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-dotenv.config();
+// Assuming the script is run from the project root
+dotenv.config({ path: require('path').resolve(__dirname, '../.env') });
 
-const Material = require('../models/Material');
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => seedMaterials())
-  .catch(err => console.error('❌ DB connection failed:', err));
+const Material = require('../src/material.model.js'); // Updated path
+// const Chapter = require('../src/exams/chapter.model.js'); // Needed if using actual chapter names/IDs
 
 async function seedMaterials() {
   try {
-    await Material.deleteMany(); // Optional: clear existing data
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('MongoDB connected for material seeding.');
 
-    const materials = [
+    await Material.deleteMany({}); // Clear existing data
+    console.log('Cleared existing materials.');
+
+    // Example: Fetch actual Chapter ObjectIds to use in materials
+    // This requires Chapter model and seeded chapters. For simplicity, using placeholder ObjectIds.
+    // const chapter1 = await Chapter.findOne({ name: "Some Chapter Name From Exams Domain" });
+    // const chapter2 = await Chapter.findOne({ name: "Another Chapter Name" });
+    // For now, using placeholder IDs. THESE WILL LIKELY NOT MATCH ACTUAL DB IDs.
+    const placeholderChapterId1 = new mongoose.Types.ObjectId();
+    const placeholderChapterId2 = new mongoose.Types.ObjectId();
+
+
+    const materialsToSeed = [
       {
-        chapterId: "6853ef6e74534d7ea7271d01",
-        bulletPoints: ["Intro to Matter", "States of matter", "Properties"],
+        title: "Introduction to Matter",
+        chapter: placeholderChapterId1, // Was chapterId
+        // subject: someSubjectId, // Ideally link to Subject and ExamCategory too
+        // examCategory: someExamCategoryId,
+        materialType: 'notes',
+        bulletPoints: ["Definition of Matter", "States of matter (Solid, Liquid, Gas)", "Basic properties of matter"],
+        isPublic: true,
       },
       {
-        chapterId: "6853ef7295ef9166d98117b7",
-        bulletPoints: ["Atoms & Molecules", "Laws of Chemical Combination"],
+        title: "Atoms and Molecules",
+        chapter: placeholderChapterId2, // Was chapterId
+        materialType: 'notes',
+        bulletPoints: ["What are atoms?", "What are molecules?", "Dalton's Atomic Theory", "Laws of Chemical Combination"],
+        isPublic: true,
       },
+      // Add more materials with new fields if needed
     ];
 
-    await Material.insertMany(materials);
-    console.log('✅ Material seeding complete!');
-    process.exit();
+    await Material.insertMany(materialsToSeed);
+    console.log(`✅ ${materialsToSeed.length} materials seeded successfully!`);
+
   } catch (err) {
-    console.error('❌ Seeding failed:', err);
-    process.exit(1);
+    console.error('❌ Material seeding failed:', err);
+  } finally {
+    await mongoose.disconnect();
+    console.log('MongoDB disconnected.');
   }
 }
+
+seedMaterials();
